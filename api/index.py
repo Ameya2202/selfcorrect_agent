@@ -34,16 +34,19 @@ if "selfcorrect_agent" not in sys.modules:
 
 # --- default to the safe offline provider for a public deployment ------------
 os.environ.setdefault("SELFCORRECT_MOCK", "1")
+# Subprocess pytest is unreliable on Vercel; force the in-process runner.
+os.environ.setdefault("SELFCORRECT_INPROCESS", "1")
 
 from selfcorrect_agent.config import Config  # noqa: E402
 from selfcorrect_agent.server import create_app  # noqa: E402
 
 # --- stage a writable copy of the demo target in /tmp ------------------------
+# Always refresh from the bundled source so a previous "Apply" doesn't leave
+# a fixed file that breaks the offline demo scenario across warm instances.
 _src = os.path.join(ROOT, "example_target.py")
 _target = os.path.join(tempfile.gettempdir(), "example_target.py")
 try:
-    if not os.path.exists(_target):
-        shutil.copy2(_src, _target)
+    shutil.copy2(_src, _target)
 except Exception:
     _target = _src  # fall back to the read-only bundled file
 

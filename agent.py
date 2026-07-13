@@ -137,7 +137,9 @@ class SelfCorrectingAgent:
             final_passed = result.n_passed
             final_total = result.n_passed + result.n_failed + result.n_errors
             steps.append(Step("Run", "ok" if result.passed else "fail",
-                              result.summary, attempt))
+                              result.summary if result.passed
+                              else f"{result.summary}\n{(result.output or '')[:400]}",
+                              attempt))
 
             if result.passed:
                 # 5. Verify

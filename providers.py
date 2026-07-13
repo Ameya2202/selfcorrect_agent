@@ -208,20 +208,30 @@ class MockProvider:
         )
         return Proposal(improved, tests, rationale)
 
+    _PLANTED = 'assert normalize_spaces("x  y") == "x  y"'
+
     def diagnose(self, code: str, tests_code: str, failure_output: str) -> Diagnosis:
-        if "test_planted_wrong_expectation" in failure_output:
+        # Prefer the planted-fault signal from the suite itself — on serverless
+        # the failure output may not name the test even when the assertion is wrong.
+        if self._PLANTED in tests_code or "test_planted_wrong_expectation" in failure_output:
             return Diagnosis(
                 "bad_test",
                 'The test asserts "x  y" but the (correct) behaviour collapses it to "x y".',
             )
+        env_markers = (
+            "Subprocess spawn failed",
+            "No module named pytest",
+            "In-process pytest crashed",
+            "Test run timed out",
+            "no tests collected",
+        )
+        if any(m in failure_output for m in env_markers):
+            return Diagnosis("environmental", failure_output[:240] or "Runner failed.")
         return Diagnosis("bad_code", "A genuine defect was caught by the tests.")
 
     def revise(self, code, tests_code, failure_output, classification) -> Revision:
-        if classification == "bad_test":
-            fixed = tests_code.replace(
-                'assert normalize_spaces("x  y") == "x  y"',
-                'assert normalize_spaces("x  y") == "x y"',
-            )
+        if classification == "bad_test" or self._PLANTED in tests_code:
+            fixed = tests_code.replace(self._PLANTED, 'assert normalize_spaces("x  y") == "x y"')
             return Revision(code, fixed, "Corrected the faulty expectation in the test.")
         return Revision(code, tests_code, "No change.")
 
