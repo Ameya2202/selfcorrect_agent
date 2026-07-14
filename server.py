@@ -12,15 +12,18 @@ Endpoints
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
 from .agent import SelfCorrectingAgent, Session
 from .config import Config
 from .memory import AgentMemory
+
+_LOGO_PATH = Path(__file__).resolve().parent / "bitwise-logo.png"
 
 SESSIONS: Dict[str, Session] = {}
 MEMORY = AgentMemory()
@@ -73,6 +76,12 @@ def create_app(target_path: str, config: Optional[Config] = None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     def index():
         return HTML_PAGE
+
+    @app.get("/bitwise-logo.png")
+    def bitwise_logo():
+        if not _LOGO_PATH.is_file():
+            raise HTTPException(status_code=404, detail="Logo not found.")
+        return FileResponse(_LOGO_PATH, media_type="image/png")
 
     @app.get("/api/target")
     def target():
@@ -173,13 +182,41 @@ HTML_PAGE = r"""<!doctype html>
     outline:none;box-shadow:0 0 0 2px var(--red-ring)}
   .btn.primary:focus-visible,.act.primary:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--red-ring)}
 
-  .app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+  .app{display:grid;grid-template-columns:var(--side-w,260px) 1fr;min-height:100vh;
+    transition:grid-template-columns 200ms var(--ease)}
+  .app.nav-collapsed{--side-w:72px}
 
   /* ---- sidebar ---- */
-  .sidebar{background:var(--canvas);border-right:1px solid var(--border);padding:20px 16px;
-    display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;overflow:auto;z-index:20}
-  .brand .mark{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--red);line-height:1.2}
-  .brand .name{font-size:14px;font-weight:600;color:var(--ink);margin-top:4px;line-height:1.2}
+  .sidebar{background:var(--canvas);border-right:1px solid var(--border);padding:16px 14px;
+    display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow:auto;z-index:20;
+    transition:padding 200ms var(--ease)}
+  .brand-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .brand{display:flex;flex-direction:column;gap:6px;min-width:0;text-decoration:none;color:inherit}
+  .brand .logo-img{display:block;height:28px;width:auto;max-width:140px;object-fit:contain}
+  .brand .name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.25}
+  .side-collapse{flex:0 0 auto;width:28px;height:28px;border-radius:6px;border:1px solid var(--border);
+    background:#fff;color:var(--mute);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .side-collapse:hover{background:#F5F5F5;border-color:var(--border-h);color:var(--ink)}
+  .side-collapse svg{width:14px;height:14px;transition:transform 200ms var(--ease)}
+  .app.nav-collapsed .side-collapse svg{transform:rotate(180deg)}
+  .app.nav-collapsed .sidebar{padding:14px 10px;align-items:center}
+  .app.nav-collapsed .brand-row{flex-direction:column;align-items:center;width:100%}
+  .app.nav-collapsed .brand{align-items:center}
+  .app.nav-collapsed .brand .logo-img{height:22px;max-width:48px;object-position:left}
+  .app.nav-collapsed .brand .name,
+  .app.nav-collapsed .side-h .t,
+  .app.nav-collapsed .runs,
+  .app.nav-collapsed .fstep .lbl,
+  .app.nav-collapsed .btn .btn-label,
+  .app.nav-collapsed .side-foot #modeFoot{display:none}
+  .app.nav-collapsed .side-h{justify-content:center;margin:0}
+  .app.nav-collapsed .flow{width:100%;align-items:center}
+  .app.nav-collapsed .fstep{justify-content:center;padding:8px 0;border-left-color:transparent}
+  .app.nav-collapsed .fstep.active{background:transparent}
+  .app.nav-collapsed .fstep::after{left:50%;transform:translateX(-50%)}
+  .app.nav-collapsed .side-btns{width:100%}
+  .app.nav-collapsed .btn{padding:10px;justify-content:center}
+  .app.nav-collapsed .side-foot{justify-content:center;padding-top:12px;width:100%}
   .side-h{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
   .side-h .t{font-size:11px;letter-spacing:.08em;color:var(--mute);font-weight:600;text-transform:uppercase}
   .runs{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
@@ -371,11 +408,21 @@ HTML_PAGE = r"""<!doctype html>
 
   @media(max-width:1024px){.kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:880px){
-    .app{grid-template-columns:1fr}
+    .app,.app.nav-collapsed{grid-template-columns:1fr;--side-w:260px}
     .nav-toggle{display:inline-flex}
+    .side-collapse{display:none}
     .sidebar{position:fixed;left:0;top:0;transform:translateX(-105%);width:min(280px,86vw);
-      transition:transform 200ms var(--ease);box-shadow:none}
+      transition:transform 200ms var(--ease);box-shadow:none;align-items:stretch!important;padding:20px 16px!important}
     .sidebar.open{transform:translateX(0)}
+    .app.nav-collapsed .brand .logo-img{height:28px;max-width:140px}
+    .app.nav-collapsed .brand .name,
+    .app.nav-collapsed .side-h .t,
+    .app.nav-collapsed .runs,
+    .app.nav-collapsed .fstep .lbl,
+    .app.nav-collapsed .btn .btn-label,
+    .app.nav-collapsed .side-foot #modeFoot{display:revert}
+    .app.nav-collapsed .fstep{justify-content:flex-start;padding:10px 8px 10px 10px}
+    .app.nav-collapsed .btn{padding:10px 14px;justify-content:center}
     .scrim.show{display:block}
     main{padding:64px 16px 32px}
   }
@@ -391,11 +438,16 @@ HTML_PAGE = r"""<!doctype html>
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
 </button>
 <div class="scrim" id="scrim" hidden></div>
-<div class="app">
+<div class="app" id="appShell">
   <nav class="sidebar" id="sidebar" aria-label="Agent flow">
-    <div class="brand">
-      <div class="mark">BITWISE</div>
-      <div class="name">Self-Correcting Agent</div>
+    <div class="brand-row">
+      <div class="brand">
+        <img class="logo-img" src="/bitwise-logo.png" width="140" height="44" alt="bitwise"/>
+        <div class="name">Self-Correcting Agent</div>
+      </div>
+      <button class="side-collapse" id="sideCollapse" type="button" aria-label="Collapse navigation" aria-controls="sidebar" aria-expanded="true" title="Collapse navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6 9 12l6 6"/></svg>
+      </button>
     </div>
     <div class="side-h">
       <span class="t">Agent Flow</span>
@@ -412,18 +464,18 @@ HTML_PAGE = r"""<!doctype html>
         <div class="lbl"><div class="n">Review Results</div><div class="s">Inspect heuristics</div></div></div>
     </div>
     <div class="side-btns">
-      <button class="btn secondary" id="bLoad" type="button">
+      <button class="btn secondary" id="bLoad" type="button" title="Load Input">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
-        Load Input</button>
-      <button class="btn primary" id="bRun" type="button" disabled>
+        <span class="btn-label">Load Input</span></button>
+      <button class="btn primary" id="bRun" type="button" disabled title="Run Session">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>
-        Run Session</button>
-      <button class="btn secondary" id="bDream" type="button" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-        Run Dreaming</button>
-      <button class="btn ghost" id="bReset" type="button">
+        <span class="btn-label">Run Session</span></button>
+      <button class="btn secondary" id="bDream" type="button" disabled title="Run Dreaming">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>
+        <span class="btn-label">Run Dreaming</span></button>
+      <button class="btn ghost" id="bReset" type="button" title="Reset">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
-        Reset</button>
+        <span class="btn-label">Reset</span></button>
     </div>
     <div class="side-foot"><span class="dot mock" id="modeDot" aria-hidden="true"></span><span id="modeFoot">offline</span></div>
   </nav>
@@ -504,12 +556,21 @@ let SESSION=null, STATE=null, TARGET=null, loaded=false;
 const REDUCE=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const EMPTY="—";
 
-/* ---- mobile nav ---- */
-const sidebar=$("#sidebar"), scrim=$("#scrim"), navToggle=$("#navToggle");
+/* ---- mobile nav + desktop collapse ---- */
+const appShell=$("#appShell"), sidebar=$("#sidebar"), scrim=$("#scrim"), navToggle=$("#navToggle"), sideCollapse=$("#sideCollapse");
 function closeNav(){sidebar.classList.remove("open");scrim.classList.remove("show");scrim.hidden=true;navToggle.setAttribute("aria-expanded","false")}
 function openNav(){sidebar.classList.add("open");scrim.classList.add("show");scrim.hidden=false;navToggle.setAttribute("aria-expanded","true")}
 navToggle.onclick=()=>sidebar.classList.contains("open")?closeNav():openNav();
 scrim.onclick=closeNav;
+function setCollapsed(on){
+  appShell.classList.toggle("nav-collapsed", !!on);
+  sideCollapse.setAttribute("aria-expanded", on?"false":"true");
+  sideCollapse.setAttribute("aria-label", on?"Expand navigation":"Collapse navigation");
+  sideCollapse.title = on?"Expand navigation":"Collapse navigation";
+  try{localStorage.setItem("sc-nav-collapsed", on?"1":"0")}catch(_){}
+}
+sideCollapse.onclick=()=>setCollapsed(!appShell.classList.contains("nav-collapsed"));
+try{ if(localStorage.getItem("sc-nav-collapsed")==="1") setCollapsed(true); }catch(_){}
 
 /* ---- pipeline states ---- */
 const STATES=[
