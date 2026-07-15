@@ -24,7 +24,8 @@ from .config import Config
 from .memory import AgentMemory
 
 _LOGO_PATH = Path(__file__).resolve().parent / "bitwise-logo.png"
-_FAVICON_PATH = Path(__file__).resolve().parent / "favicon.png"
+_FAVICON_PNG = Path(__file__).resolve().parent / "favicon.png"
+_FAVICON_SVG = Path(__file__).resolve().parent / "favicon.svg"
 
 SESSIONS: Dict[str, Session] = {}
 MEMORY = AgentMemory()
@@ -84,12 +85,26 @@ def create_app(target_path: str, config: Optional[Config] = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Logo not found.")
         return FileResponse(_LOGO_PATH, media_type="image/png")
 
+    @app.get("/favicon.svg")
+    def favicon_svg():
+        if not _FAVICON_SVG.is_file():
+            raise HTTPException(status_code=404, detail="Favicon not found.")
+        return FileResponse(
+            _FAVICON_SVG,
+            media_type="image/svg+xml",
+            headers={"Cache-Control": "public, max-age=0, must-revalidate"},
+        )
+
     @app.get("/favicon.png")
     @app.get("/favicon.ico")
     def favicon():
-        if not _FAVICON_PATH.is_file():
+        if not _FAVICON_PNG.is_file():
             raise HTTPException(status_code=404, detail="Favicon not found.")
-        return FileResponse(_FAVICON_PATH, media_type="image/png")
+        return FileResponse(
+            _FAVICON_PNG,
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=0, must-revalidate"},
+        )
 
     @app.get("/api/target")
     def target():
@@ -160,8 +175,9 @@ HTML_PAGE = r"""<!doctype html>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Self-Correcting Agent</title>
-<link rel="icon" href="/favicon.png" type="image/png"/>
-<link rel="apple-touch-icon" href="/favicon.png"/>
+<link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.png?v=3" type="image/png"/>
+<link rel="apple-touch-icon" href="/favicon.png?v=3"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" fill="#000000"/>
+  <!-- Bitwise mark: red b + red tittle -->
+  <circle cx="15.2" cy="19.2" r="7.4" stroke="#E10600" stroke-width="4.2" fill="none"/>
+  <rect x="7.8" y="5.2" width="4.2" height="21.2" rx="0.4" fill="#E10600"/>
+  <circle cx="24.6" cy="8.2" r="2.35" fill="#E10600"/>
+</svg>
