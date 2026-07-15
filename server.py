@@ -24,6 +24,7 @@ from .config import Config
 from .memory import AgentMemory
 
 _LOGO_PATH = Path(__file__).resolve().parent / "bitwise-logo.png"
+_FAVICON_PATH = Path(__file__).resolve().parent / "favicon.png"
 
 SESSIONS: Dict[str, Session] = {}
 MEMORY = AgentMemory()
@@ -82,6 +83,13 @@ def create_app(target_path: str, config: Optional[Config] = None) -> FastAPI:
         if not _LOGO_PATH.is_file():
             raise HTTPException(status_code=404, detail="Logo not found.")
         return FileResponse(_LOGO_PATH, media_type="image/png")
+
+    @app.get("/favicon.png")
+    @app.get("/favicon.ico")
+    def favicon():
+        if not _FAVICON_PATH.is_file():
+            raise HTTPException(status_code=404, detail="Favicon not found.")
+        return FileResponse(_FAVICON_PATH, media_type="image/png")
 
     @app.get("/api/target")
     def target():
@@ -152,6 +160,8 @@ HTML_PAGE = r"""<!doctype html>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Self-Correcting Agent</title>
+<link rel="icon" href="/favicon.png" type="image/png"/>
+<link rel="apple-touch-icon" href="/favicon.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
