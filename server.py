@@ -207,8 +207,7 @@ HTML_PAGE = r"""<!doctype html>
   .app.nav-collapsed .side-h .t,
   .app.nav-collapsed .runs,
   .app.nav-collapsed .fstep .lbl,
-  .app.nav-collapsed .btn .btn-label,
-  .app.nav-collapsed .side-foot #modeFoot{display:none}
+  .app.nav-collapsed .btn .btn-label{display:none}
   .app.nav-collapsed .side-h{justify-content:center;margin:0}
   .app.nav-collapsed .flow{width:100%;align-items:center}
   .app.nav-collapsed .fstep{justify-content:center;padding:8px 0;border-left-color:transparent}
@@ -216,7 +215,6 @@ HTML_PAGE = r"""<!doctype html>
   .app.nav-collapsed .fstep::after{left:50%;transform:translateX(-50%)}
   .app.nav-collapsed .side-btns{width:100%}
   .app.nav-collapsed .btn{padding:10px;justify-content:center}
-  .app.nav-collapsed .side-foot{justify-content:center;padding-top:12px;width:100%}
   .side-h{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
   .side-h .t{font-size:11px;letter-spacing:.08em;color:var(--mute);font-weight:600;text-transform:uppercase}
   .runs{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
@@ -242,7 +240,7 @@ HTML_PAGE = r"""<!doctype html>
     background:var(--border);z-index:0}
   .fstep:last-child::after{display:none}
 
-  .side-btns{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .side-btns{display:flex;flex-direction:column;gap:8px;margin-top:auto}
   .btn{font:inherit;border:1px solid transparent;border-radius:8px;padding:10px 14px;cursor:pointer;
     display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;justify-content:center;
     background:var(--surface);color:var(--ink)}
@@ -255,12 +253,6 @@ HTML_PAGE = r"""<!doctype html>
   .btn.ghost{background:transparent;border-color:transparent;color:var(--mute);font-weight:500}
   .btn.ghost:hover:not(:disabled){color:var(--ink);background:#F5F5F5}
   .btn:disabled{opacity:.45;cursor:not-allowed}
-
-  .side-foot{margin-top:auto;font-size:12px;color:var(--mute);border-top:1px solid var(--border);
-    padding-top:14px;display:flex;align-items:center;gap:8px}
-  .side-foot .dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex:0 0 auto}
-  .side-foot .dot.live{background:var(--ok);box-shadow:0 0 0 0 rgba(26,127,55,.45);animation:pulse 1.6s ease-out infinite}
-  .side-foot .dot.mock{background:var(--faint)}
 
   .nav-toggle{display:none;position:fixed;top:12px;left:12px;z-index:40;width:40px;height:40px;
     border-radius:8px;border:1px solid var(--border);background:#fff;align-items:center;justify-content:center;cursor:pointer}
@@ -281,8 +273,6 @@ HTML_PAGE = r"""<!doctype html>
   .topbar{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px}
   .topbar h1{font-size:20px;margin:0;font-weight:600;line-height:1.2;letter-spacing:-.01em}
   .topbar .path{color:var(--mute);font-size:12px;margin-top:6px;word-break:break-all}
-  .pill{margin-left:auto;font-size:12px;color:var(--mute);border:1px solid var(--border);
-    padding:5px 10px;border-radius:999px;background:#fff;white-space:nowrap;align-self:flex-start}
 
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
   .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;
@@ -419,8 +409,7 @@ HTML_PAGE = r"""<!doctype html>
     .app.nav-collapsed .side-h .t,
     .app.nav-collapsed .runs,
     .app.nav-collapsed .fstep .lbl,
-    .app.nav-collapsed .btn .btn-label,
-    .app.nav-collapsed .side-foot #modeFoot{display:revert}
+    .app.nav-collapsed .btn .btn-label{display:revert}
     .app.nav-collapsed .fstep{justify-content:flex-start;padding:10px 8px 10px 10px}
     .app.nav-collapsed .btn{padding:10px 14px;justify-content:center}
     .scrim.show{display:block}
@@ -477,7 +466,6 @@ HTML_PAGE = r"""<!doctype html>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
         <span class="btn-label">Reset</span></button>
     </div>
-    <div class="side-foot"><span class="dot mock" id="modeDot" aria-hidden="true"></span><span id="modeFoot">offline</span></div>
   </nav>
 
   <main>
@@ -486,7 +474,6 @@ HTML_PAGE = r"""<!doctype html>
         <h1>Self-Correcting Agent</h1>
         <div class="path mono" id="path">loading…</div>
       </div>
-      <span class="pill" id="modePill"></span>
     </div>
 
     <div id="status" class="rise" aria-live="polite"></div>
@@ -808,10 +795,6 @@ wireChartLink();
 (async()=>{
   const t=await (await fetch("/api/target")).json(); TARGET=t;
   $("#path").textContent=t.path;
-  const mode=t.mock?"offline mock provider":("model: "+t.model);
-  $("#modePill").textContent=mode; $("#modeFoot").textContent=t.mock?"offline mock":"live model";
-  const dot=$("#modeDot");
-  if(dot){dot.classList.toggle("mock",!!t.mock);dot.classList.toggle("live",!t.mock)}
   const st=await (await fetch("/api/state")).json(); renderState(st);
   setFlow(1,DONE);
 })();
